@@ -151,7 +151,7 @@ func DefaultConfig() Config {
 // Hash takes a password and optionally a salt and returns an Argon2 hash.
 //
 // If salt is nil a appropriate salt of Config.SaltLength bytes is generated for you.
-// I recommend using SecureWipe(pwd) after using this method.
+// It is recommended to use SecureZeroMemory(pwd) afterwards.
 func (c *Config) Hash(pwd []byte, salt []byte) (raw Raw, err error) {
 	if pwd == nil {
 		err = ErrPwdTooShort
@@ -213,7 +213,7 @@ func (c *Config) Hash(pwd []byte, salt []byte) (raw Raw, err error) {
 // HashRaw is a helper function around Hash()
 // which automatically generates a salt for you.
 //
-// I recommend using SecureWipe(pwd) after using this method.
+// It is recommended to use SecureZeroMemory(pwd) afterwards.
 func (c *Config) HashRaw(pwd []byte) (Raw, error) {
 	return c.Hash(pwd, nil)
 }
@@ -221,7 +221,7 @@ func (c *Config) HashRaw(pwd []byte) (Raw, error) {
 // HashEncoded is a helper function around Hash() which automatically
 // generates a salt and encodes the result for you.
 //
-// I recommend using SecureWipe(pwd) after using this method.
+// It is recommended to use SecureZeroMemory(pwd) afterwards.
 func (c *Config) HashEncoded(pwd []byte) (encoded []byte, err error) {
 	r, err := c.Hash(pwd, nil)
 	if err == nil {
