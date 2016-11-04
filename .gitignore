@@ -1,0 +1,16 @@
+### Go ###
+*.o
+*.a
+*.so
+*.exe
+*.test
+*.prof
+*.out
+
+### Windows ###
+Thumbs.db
+Desktop.ini
+
+### OSX ###
+*.DS_Store
+._*
