@@ -80,6 +80,21 @@ const (
 	ModeArgon2id = Mode(C.Argon2_id)
 )
 
+// String simply maps a ModeArgon{d,i,id} constant to a "Argon{d,i,id}" string
+// or returns "unknown" if `m` does not match one of the constants.
+func (m Mode) String() string {
+	switch m {
+	case ModeArgon2d:
+		return "Argon2d"
+	case ModeArgon2i:
+		return "Argon2i"
+	case ModeArgon2id:
+		return "Argon2id"
+	default:
+		return "unknown"
+	}
+}
+
 // Version exists for type check purposes. See Config.
 type Version uint32
 
@@ -90,6 +105,19 @@ const (
 	// Version13 of the Argon2 algorithm. Recommended.
 	Version13 = Version(C.ARGON2_VERSION_13)
 )
+
+// String simply maps a Version{10,13} constant to a "{10,13}" string
+// or returns "unknown" if `v` does not match one of the constants.
+func (v Version) String() string {
+	switch v {
+	case Version10:
+		return "10"
+	case Version13:
+		return "13"
+	default:
+		return "unknown"
+	}
+}
 
 // Config contains all configuration parameters for the Argon2 hash function.
 //
