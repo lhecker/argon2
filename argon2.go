@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT-style
 // license that can be found in the LICENSE file.
 
-// Package argon2 provides native Argon2 bindings for password hashing purposes.
+// Package argon2 provides Argon2 bindings for password hashing purposes.
 package argon2
 
 /*

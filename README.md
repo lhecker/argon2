@@ -1,40 +1,24 @@
 # argon2
 
-The **fastest** _and_ **easiest** to use native Argon2 bindings for Go!
+[![](https://godoc.org/github.com/lhecker/argon2?status.svg)](https://godoc.org/github.com/lhecker/argon2)
 
-## Installation
-
-```
-import "github.com/lhecker/argon2"
-```
-
-and optionally
-
-```
-go get -d github.com/lhecker/argon2
-```
+The **fastest** _and_ **easiest** to use [Argon2](https://github.com/P-H-C/phc-winner-argon2) bindings for Go!
 
 ## Features
 
+- Zero dependencies
 - Easy to use API, including generation of raw and encoded hashes.
 - Up to date & used in production environments.
 - Contains Go-specific optimizations for a consistent **15%** performance boost.
 - Allows you to enable all possible optimizations in Argon2, improving performance by up to **40%** in total!
 
-## Current downsides
+## Usage
 
-This package uses `cgo` like all native bindings and thus comes with all it's downsides:
+See [`examples/example.go`](https://github.com/lhecker/argon2/blob/master/examples/example.go) for a simple introduction and try it out with:
 
-- `cgo` makes cross-compilation hard.
-- Can cause excessive spawning of native threads. ¹
-
-Due to the infinitely superior performance compared to a Go implementation I still personally believe that the benefits outweigh the drawbacks though.
-
-¹
-Let's say there is a situation where one or more Goroutines are stuck in a `cgo` call and a new regular Goroutine is spawned.
-If the scheduler can't find a suitable processor to run that Goroutine on, it will spawn a new processor.
-Furthermore one of the Goroutines stuck in `cgo` is then marked as a "native" thread, which is destroyed as soon as the call is finished.
-This downside has been mostly offset though by optimizing Argon2 to not spawn native threads as long as `Config.Parallelism` is 1 (which is the default).
+```bash
+go run examples/example.go
+```
 
 ## Performance
 
@@ -52,9 +36,24 @@ If you are planning to deploy this library in a different environment you should
 This way you can achieve an performance improvement of up to 25%.
 You can use this performance improvement as a free ticket for stronger hash settings and thus improved security at the same cost.
 
+## Current downsides
+
+This package uses `cgo` like all Go bindings and thus comes with all it's downsides:
+
+- `cgo` makes cross-compilation hard.
+- Can cause excessive spawning of native threads. ¹
+
+Due to the infinitely superior performance compared to a pure Go implementation I still personally believe that the benefits outweigh the drawbacks though.
+
+¹
+Let's say there is a situation where one or more Goroutines are stuck in a `cgo` call and a new regular Goroutine is spawned.
+If the scheduler can't find a suitable processor to run that Goroutine on, it will spawn a new processor.
+Furthermore one of the Goroutines stuck in `cgo` is then marked as a "native" thread, which is destroyed as soon as the call is finished.
+This downside has been mostly offset though by optimizing Argon2 to not spawn native threads as long as `Config.Parallelism` is 1 (which is the default).
+
 ## Modifications to Argon2
 
-Based on Argon2 [bc345e3](https://github.com/P-H-C/phc-winner-argon2/tree/bc345e3afb8ed1a26f3e41b2e778357bafea4a16).
+Based on [bc345e3](https://github.com/P-H-C/phc-winner-argon2/tree/bc345e3afb8ed1a26f3e41b2e778357bafea4a16).
 
 - Moved blake2 code into the root source directory & adjusted include paths to match this.
 - Merged `ref.{h,c}` and `opt.{h,c}` into one file (`ref_opt.{h,c}`) & adjusted include paths to match this. This allows us to use the `__SSE__` precompiler flag for SSE detection instead of relying on a Makefile.
