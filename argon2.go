@@ -2,7 +2,9 @@
 // Use of this source code is governed by a MIT-style
 // license that can be found in the LICENSE file.
 
-// Package argon2 provides Argon2 bindings for password hashing purposes.
+// Package argon2 provides fast and easy to use bindings for Argon2:
+// A very secure, modern password hashing algorithm - Winner of the
+// Password Hashing Competition (PHC).
 package argon2
 
 /*
@@ -116,9 +118,16 @@ func (v Version) String() string {
 	}
 }
 
+// NOTE: Keep `Config` in sync with the C code at the beginning of this file.
+
 // Config contains all configuration parameters for the Argon2 hash function.
 //
-// NOTE: Keep this in sync with the C code at the beginning of this file.
+// You MUST ensure that a Config instance is not changed after creation,
+// otherwise you risk race conditions. If you do need to change it during
+// runtime use a Mutex and simply create a by-value copy of your shared Config
+// instance in the critical section and store it on your local stack.
+// That way your critical section is very short, while allowing you to safely
+// call all the member methods on your local "immutable" copy.
 type Config struct {
 	// HashLength specifies the length of the resulting hash in Bytes.
 	//
@@ -178,18 +187,17 @@ func DefaultConfig() Config {
 //
 // If salt is nil a appropriate salt of Config.SaltLength bytes is generated for you.
 // It is recommended to use SecureZeroMemory(pwd) afterwards.
-func (c *Config) Hash(pwd []byte, salt []byte) (raw Raw, err error) {
+func (c *Config) Hash(pwd []byte, salt []byte) (Raw, error) {
 	if pwd == nil {
-		err = ErrPwdTooShort
-		return
+		return Raw{}, ErrPwdTooShort
 	}
 
 	if salt == nil {
 		salt = make([]byte, c.SaltLength)
-		_, err = rand.Read(salt)
+		_, err := rand.Read(salt)
 
 		if err != nil {
-			return
+			return Raw{}, err
 		}
 	}
 
@@ -201,10 +209,6 @@ func (c *Config) Hash(pwd []byte, salt []byte) (raw Raw, err error) {
 	hashlen := C.uint32_t(c.HashLength)
 
 	hash := make([]byte, hashlen)
-
-	raw.Config = c
-	raw.Salt = salt
-	raw.Hash = hash
 
 	if pwdlen > 0 {
 		pwdptr = unsafe.Pointer(&pwd[0])
@@ -229,11 +233,14 @@ func (c *Config) Hash(pwd []byte, salt []byte) (raw Raw, err error) {
 	)
 
 	if rc != C.ARGON2_OK {
-		raw = Raw{}
-		err = Error(rc)
+		return Raw{}, Error(rc)
 	}
 
-	return
+	return Raw{
+		Config: *c,
+		Salt:   salt,
+		Hash:   hash,
+	}, nil
 }
 
 // HashRaw is a helper function around Hash()
@@ -259,8 +266,15 @@ func (c *Config) HashEncoded(pwd []byte) (encoded []byte, err error) {
 // Raw wraps a salt and hash pair including the Config with which it was generated.
 //
 // A Raw struct is generated using Decode() or the Hash*() methods above.
+//
+// You MUST ensure that a Raw instance is not changed after creation,
+// otherwise you risk race conditions. If you do need to change it during
+// runtime use a Mutex and simply create a copy of your shared Raw
+// instance in the critical section and store it on your local stack.
+// That way your critical section is very short, while allowing you to safely
+// call all the member methods on your local "immutable" copy.
 type Raw struct {
-	Config *Config
+	Config Config
 	Salt   []byte
 	Hash   []byte
 }
