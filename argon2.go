@@ -58,25 +58,22 @@ import (
 type Mode uint32
 
 const (
-	// ModeArgon2d is faster and uses data-depending memory access, which makes it
-	// highly resistant against GPU cracking attacks and suitable for applications
-	// with no (!) threats from side-channel timing attacks (eg. cryptocurrencies).
-	//
-	// Source: https://github.com/P-H-C/phc-winner-argon2
+	// ModeArgon2d is faster and uses data-depending memory access,
+	// which makes it highly resistant against GPU cracking attacks and
+	// suitable for applications with no (!) threats from
+	// side-channel timing attacks (eg. cryptocurrencies).
 	ModeArgon2d = Mode(C.Argon2_d)
 
-	// ModeArgon2i uses data-independent memory access, which is preferred for
-	// password hashing and password-based key derivation (e.g. hard drive encryption),
-	// but it is slower as it makes more passes over the memory to protect from TMTO attacks.
-	//
-	// Source: https://github.com/P-H-C/phc-winner-argon2
+	// ModeArgon2i uses data-independent memory access, which is
+	// preferred for password hashing and password-based key derivation
+	// (e.g. hard drive encryption), but it's slower as it makes
+	// more passes over the memory to protect from TMTO attacks.
 	ModeArgon2i = Mode(C.Argon2_i)
 
-	// ModeArgon2id is a hybrid of Argon2i and Argon2d, using a combination of data-depending
-	// and data-independent memory accesses, which gives some of Argon2i's resistance to
-	// side-channel cache timing attacks and much of Argon2d's resistance to GPU cracking attacks.
-	//
-	// Source: https://github.com/P-H-C/phc-winner-argon2
+	// ModeArgon2id is a hybrid of Argon2i and Argon2d, using a
+	// combination of data-depending and data-independent memory accesses,
+	// which gives some of Argon2i's resistance to side-channel cache timing
+	// attacks and much of Argon2d's resistance to GPU cracking attacks.
 	ModeArgon2id = Mode(C.Argon2_id)
 )
 
