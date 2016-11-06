@@ -152,7 +152,7 @@ var (
 // Encode turns a Raw struct into the official stringified/encoded argon2 representation.
 //
 // The resulting byte slice can safely be turned into a string.
-func Encode(raw *Raw) []byte {
+func (raw *Raw) Encode() []byte {
 	c := raw.Config
 	saltLen64 := enc64.EncodedLen(len(raw.Salt))
 	hashLen64 := enc64.EncodedLen(len(raw.Hash))

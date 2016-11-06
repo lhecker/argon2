@@ -268,18 +268,8 @@ type Raw struct {
 	Hash   []byte
 }
 
-// Encode is a helper method around the global Encode(Raw) method in this package.
-func (raw *Raw) Encode() []byte {
-	return Encode(raw)
-}
-
-// Verify is a helper function around the global VerifyRaw() method in this package..
+// Verify returns true if `pwd` matches the hash in `raw` and otherwise false.
 func (raw *Raw) Verify(pwd []byte) (bool, error) {
-	return VerifyRaw(pwd, raw)
-}
-
-// VerifyRaw returns true if `pwd` matches the hash in `raw` and otherwise false.
-func VerifyRaw(pwd []byte, raw *Raw) (bool, error) {
 	r, err := raw.Config.Hash(pwd, raw.Salt)
 	if err != nil {
 		return false, err
@@ -293,7 +283,7 @@ func VerifyEncoded(pwd []byte, encoded []byte) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return VerifyRaw(pwd, &r)
+	return r.Verify(pwd)
 }
 
 // SecureZeroMemory is a helper method which as securely as possible sets all
