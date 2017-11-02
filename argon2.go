@@ -194,9 +194,9 @@ func DefaultConfig() Config {
 //
 // If salt is nil a appropriate salt of Config.SaltLength bytes is generated for you.
 // It is recommended to use SecureZeroMemory(pwd) afterwards.
-func (c *Config) Hash(pwd []byte, salt []byte) (Raw, error) {
+func (c *Config) Hash(pwd []byte, salt []byte) (*Raw, error) {
 	if pwd == nil {
-		return Raw{}, ErrPwdTooShort
+		return nil, ErrPwdTooShort
 	}
 
 	if salt == nil {
@@ -204,7 +204,7 @@ func (c *Config) Hash(pwd []byte, salt []byte) (Raw, error) {
 		_, err := rand.Read(salt)
 
 		if err != nil {
-			return Raw{}, err
+			return nil, err
 		}
 	}
 
@@ -240,10 +240,10 @@ func (c *Config) Hash(pwd []byte, salt []byte) (Raw, error) {
 	)
 
 	if rc != C.ARGON2_OK {
-		return Raw{}, Error(rc)
+		return nil, Error(rc)
 	}
 
-	return Raw{
+	return &Raw{
 		Config: *c,
 		Salt:   salt,
 		Hash:   hash,
@@ -254,7 +254,7 @@ func (c *Config) Hash(pwd []byte, salt []byte) (Raw, error) {
 // which automatically generates a salt for you.
 //
 // It is recommended to use SecureZeroMemory(pwd) afterwards.
-func (c *Config) HashRaw(pwd []byte) (Raw, error) {
+func (c *Config) HashRaw(pwd []byte) (*Raw, error) {
 	return c.Hash(pwd, nil)
 }
 

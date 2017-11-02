@@ -197,11 +197,11 @@ func (raw *Raw) Encode() []byte {
 // Decode takes a stringified/encoded argon2 hash and turns it back into a Raw struct.
 //
 // This decoder ignores "data" attributes as they are likely to be deprecated.
-func Decode(encoded []byte) (Raw, error) {
+func Decode(encoded []byte) (*Raw, error) {
 	pa := parser{buf: encoded}
 
 	if pa.check(decChunk1) != 0 {
-		return Raw{}, ErrIncorrectType
+		return nil, ErrIncorrectType
 	}
 
 	typ1 := pa.readByte()
@@ -215,7 +215,7 @@ func Decode(encoded []byte) (Raw, error) {
 			if r == '$' {
 				mode = ModeArgon2id
 			} else {
-				return Raw{}, ErrIncorrectType
+				return nil, ErrIncorrectType
 			}
 		} else if typ2 == '$' {
 			mode = ModeArgon2i
@@ -223,7 +223,7 @@ func Decode(encoded []byte) (Raw, error) {
 	} else if typ1 == 'd' {
 		mode = ModeArgon2d
 	} else {
-		return Raw{}, ErrIncorrectType
+		return nil, ErrIncorrectType
 	}
 
 	ok := pa.check(decChunk2)
@@ -239,7 +239,7 @@ func Decode(encoded []byte) (Raw, error) {
 	h := pa.readRest()
 
 	if ok != 0 || v == 0 || v > 255 || m == 0 || t == 0 || p == 0 || s == nil || h == nil {
-		return Raw{}, ErrDecodingFail
+		return nil, ErrDecodingFail
 	}
 
 	salt := make([]byte, enc64.DecodedLen(len(s)))
@@ -248,10 +248,10 @@ func Decode(encoded []byte) (Raw, error) {
 	hl, he := enc64.Decode(hash, h)
 
 	if se != nil || he != nil {
-		return Raw{}, ErrDecodingFail
+		return nil, ErrDecodingFail
 	}
 
-	return Raw{
+	return &Raw{
 		Config: Config{
 			HashLength:  uint32(hl),
 			SaltLength:  uint32(sl),
