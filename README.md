@@ -41,20 +41,24 @@ You can use this performance improvement as a free ticket for stronger hash sett
 This package uses `cgo` like all Go bindings and thus comes with all it's downsides:
 
 - `cgo` makes cross-compilation hard.
-- Can cause excessive spawning of native threads. ¹
+- Can cause excessive spawning of native threads. ¹²
 
 Due to the infinitely superior performance compared to a pure Go implementation I still personally believe that the benefits outweigh the drawbacks though.
 
 ¹
-Let's say there is a situation where one or more Goroutines are stuck in a `cgo` call and a new regular Goroutine is spawned.
-If the scheduler can't find a suitable processor to run that Goroutine on, it will spawn a new processor.
-Furthermore one of the Goroutines stuck in `cgo` is then marked as a "native" thread, which is destroyed as soon as the call is finished.
-This downside has been mostly offset though by optimizing Argon2 to not spawn native threads as long as `Config.Parallelism` is 1 (which is the default).
+Even if `GOMAXPROCS` has been reached, the Goroutine scheduler will spawn another thread if all threads are already busy processing Goroutines and atleast one of those threads is stuck inside a `cgo` call.
+That thread and its goroutine will then be taken out of the scheduler's thread pool and be replaced by a new thread.
+The old thread on the other hand will be discarded as soon as the goroutine finishes.
+As long as `Config.Parallelism` is 1 (which is the default) Argon2 will not spawn any additional threads internally though, keeping this overhead relatively modest.
+
+²
+If excessive thread spawning still turns out as a performance problem I recommend creating an old-fashioned worker pool by spawning some Goroutines (e.g. as many as CPU cores in the system) in each of which `runtime.LockOSThread()` is called at the beginning.
+In an forever-loop you could then process requests for password hashing using channels from the outside.
+Since those goroutines never return their threads will never be scavanged, allowing them to idle around in cgo as long as they want to.
 
 ## Modifications to Argon2
 
-Based on [bc345e3](https://github.com/P-H-C/phc-winner-argon2/tree/bc345e3afb8ed1a26f3e41b2e778357bafea4a16).
+Based on [54ff100](https://github.com/P-H-C/phc-winner-argon2/tree/54ff100b0717505493439ec9d4ca85cb9cbdef00).
 
-- Moved blake2 code into the root source directory & adjusted include paths to match this.
-- Merged `ref.{h,c}` and `opt.{h,c}` into one file (`ref_opt.{h,c}`) & adjusted include paths to match this. This allows us to use the `__SSE__` precompiler flag for SSE detection instead of relying on a Makefile.
-- Optimized `core.c`'s `fill_memory_blocks` (see `core.diff`). This will now prevent spawning additional threads whenever `Config.Parallelism` is 1.
+- Moved blake2 code into the root source directory and adjusted include paths to match this change.
+- Merged `ref.c` and `opt.c` into one file (`ref_opt.c`). This allows us to use the `__SSE__` precompiler flag for SSE detection instead of relying on a Makefile.

@@ -9,8 +9,9 @@ package argon2
 
 /*
 #include <stdint.h>
-#include <argon2.h>
-#include <core.h>
+
+#include "argon2.h"
+#include "core.h"
 
 // This is structurally the same as the Config struct below
 typedef struct bindings_argon2_config {
@@ -32,18 +33,24 @@ int bindings_argon2_hash(const bindings_argon2_config* cfg, void* pwd, const uin
 		.pwdlen = pwdlen,
 		.salt = salt,
 		.saltlen = saltlen,
+		.secret = NULL,
+		.secretlen = 0,
+		.ad = NULL,
+		.adlen = 0,
 		.t_cost = cfg->TimeCost,
 		.m_cost = cfg->MemoryCost,
 		.lanes = cfg->Parallelism,
 		.threads = cfg->Parallelism,
-		.flags = ARGON2_DEFAULT_FLAGS,
 		.version = cfg->Version,
+		.allocate_cbk = NULL,
+		.free_cbk = NULL,
+		.flags = ARGON2_DEFAULT_FLAGS,
 	};
 
 	const int rc = argon2_ctx(&c, cfg->Mode);
 
 	if (rc != ARGON2_OK) {
-		secure_wipe_memory(hash, hashlen);
+		clear_internal_memory(hash, hashlen);
 	}
 
 	return rc;

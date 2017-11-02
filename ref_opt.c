@@ -1,5 +1,3 @@
-#ifndef __SSE__
-
 /*
  * Argon2 reference source code package - reference C implementations
  *
@@ -17,20 +15,31 @@
  * software. If not, they may be obtained at the above URLs.
  */
 
+#ifndef __SSE__
+
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
 
 #include "argon2.h"
-#include "ref_opt.h"
+#include "core.h"
 
 #include "blamka-round-ref.h"
 #include "blake2-impl.h"
 #include "blake2.h"
 
 
-void fill_block(const block *prev_block, const block *ref_block,
-                block *next_block, int with_xor) {
+/*
+ * Function fills a new memory block and optionally XORs the old block over the new one.
+ * @next_block must be initialized.
+ * @param prev_block Pointer to the previous block
+ * @param ref_block Pointer to the reference block
+ * @param next_block Pointer to the block to be constructed
+ * @param with_xor Whether to XOR into the new block (1) or just overwrite (0)
+ * @pre all block pointers must be valid
+ */
+static void fill_block(const block *prev_block, const block *ref_block,
+                       block *next_block, int with_xor) {
     block blockR, block_tmp;
     unsigned i;
 
@@ -188,35 +197,100 @@ void fill_segment(const argon2_instance_t *instance,
 
 #else // ifndef __SSE__
 
-/*
- * Argon2 reference source code package - reference C implementations
- *
- * Copyright 2015
- * Daniel Dinu, Dmitry Khovratovich, Jean-Philippe Aumasson, and Samuel Neves
- *
- * You may use this work under the terms of a Creative Commons CC0 1.0
- * License/Waiver or the Apache Public License 2.0, at your option. The terms of
- * these licenses can be found at:
- *
- * - CC0 1.0 Universal : http://creativecommons.org/publicdomain/zero/1.0
- * - Apache 2.0        : http://www.apache.org/licenses/LICENSE-2.0
- *
- * You should have received a copy of both of these licenses along with this
- * software. If not, they may be obtained at the above URLs.
- */
-
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
 
 #include "argon2.h"
-#include "ref_opt.h"
+#include "core.h"
 
 #include "blake2.h"
 #include "blamka-round-opt.h"
 
-void fill_block(__m128i *state, const block *ref_block, block *next_block,
-                int with_xor) {
+/*
+ * Function fills a new memory block and optionally XORs the old block over the new one.
+ * Memory must be initialized.
+ * @param state Pointer to the just produced block. Content will be updated(!)
+ * @param ref_block Pointer to the reference block
+ * @param next_block Pointer to the block to be XORed over. May coincide with @ref_block
+ * @param with_xor Whether to XOR into the new block (1) or just overwrite (0)
+ * @pre all block pointers must be valid
+ */
+#if defined(__AVX512F__)
+static void fill_block(__m512i *state, const block *ref_block,
+                       block *next_block, int with_xor) {
+    __m512i block_XY[ARGON2_512BIT_WORDS_IN_BLOCK];
+    unsigned int i;
+
+    if (with_xor) {
+        for (i = 0; i < ARGON2_512BIT_WORDS_IN_BLOCK; i++) {
+            state[i] = _mm512_xor_si512(
+                state[i], _mm512_loadu_si512((const __m512i *)ref_block->v + i));
+            block_XY[i] = _mm512_xor_si512(
+                state[i], _mm512_loadu_si512((const __m512i *)next_block->v + i));
+        }
+    } else {
+        for (i = 0; i < ARGON2_512BIT_WORDS_IN_BLOCK; i++) {
+            block_XY[i] = state[i] = _mm512_xor_si512(
+                state[i], _mm512_loadu_si512((const __m512i *)ref_block->v + i));
+        }
+    }
+
+    for (i = 0; i < 2; ++i) {
+        BLAKE2_ROUND_1(
+            state[8 * i + 0], state[8 * i + 1], state[8 * i + 2], state[8 * i + 3],
+            state[8 * i + 4], state[8 * i + 5], state[8 * i + 6], state[8 * i + 7]);
+    }
+
+    for (i = 0; i < 2; ++i) {
+        BLAKE2_ROUND_2(
+            state[2 * 0 + i], state[2 * 1 + i], state[2 * 2 + i], state[2 * 3 + i],
+            state[2 * 4 + i], state[2 * 5 + i], state[2 * 6 + i], state[2 * 7 + i]);
+    }
+
+    for (i = 0; i < ARGON2_512BIT_WORDS_IN_BLOCK; i++) {
+        state[i] = _mm512_xor_si512(state[i], block_XY[i]);
+        _mm512_storeu_si512((__m512i *)next_block->v + i, state[i]);
+    }
+}
+#elif defined(__AVX2__)
+static void fill_block(__m256i *state, const block *ref_block,
+                       block *next_block, int with_xor) {
+    __m256i block_XY[ARGON2_HWORDS_IN_BLOCK];
+    unsigned int i;
+
+    if (with_xor) {
+        for (i = 0; i < ARGON2_HWORDS_IN_BLOCK; i++) {
+            state[i] = _mm256_xor_si256(
+                state[i], _mm256_loadu_si256((const __m256i *)ref_block->v + i));
+            block_XY[i] = _mm256_xor_si256(
+                state[i], _mm256_loadu_si256((const __m256i *)next_block->v + i));
+        }
+    } else {
+        for (i = 0; i < ARGON2_HWORDS_IN_BLOCK; i++) {
+            block_XY[i] = state[i] = _mm256_xor_si256(
+                state[i], _mm256_loadu_si256((const __m256i *)ref_block->v + i));
+        }
+    }
+
+    for (i = 0; i < 4; ++i) {
+        BLAKE2_ROUND_1(state[8 * i + 0], state[8 * i + 4], state[8 * i + 1], state[8 * i + 5],
+                       state[8 * i + 2], state[8 * i + 6], state[8 * i + 3], state[8 * i + 7]);
+    }
+
+    for (i = 0; i < 4; ++i) {
+        BLAKE2_ROUND_2(state[ 0 + i], state[ 4 + i], state[ 8 + i], state[12 + i],
+                       state[16 + i], state[20 + i], state[24 + i], state[28 + i]);
+    }
+
+    for (i = 0; i < ARGON2_HWORDS_IN_BLOCK; i++) {
+        state[i] = _mm256_xor_si256(state[i], block_XY[i]);
+        _mm256_storeu_si256((__m256i *)next_block->v + i, state[i]);
+    }
+}
+#else
+static void fill_block(__m128i *state, const block *ref_block,
+                       block *next_block, int with_xor) {
     __m128i block_XY[ARGON2_OWORDS_IN_BLOCK];
     unsigned int i;
 
@@ -251,11 +325,20 @@ void fill_block(__m128i *state, const block *ref_block, block *next_block,
         _mm_storeu_si128((__m128i *)next_block->v + i, state[i]);
     }
 }
+#endif
 
 static void next_addresses(block *address_block, block *input_block) {
     /*Temporary zero-initialized blocks*/
+#if defined(__AVX512F__)
+    __m512i zero_block[ARGON2_512BIT_WORDS_IN_BLOCK];
+    __m512i zero2_block[ARGON2_512BIT_WORDS_IN_BLOCK];
+#elif defined(__AVX2__)
+    __m256i zero_block[ARGON2_HWORDS_IN_BLOCK];
+    __m256i zero2_block[ARGON2_HWORDS_IN_BLOCK];
+#else
     __m128i zero_block[ARGON2_OWORDS_IN_BLOCK];
     __m128i zero2_block[ARGON2_OWORDS_IN_BLOCK];
+#endif
 
     memset(zero_block, 0, sizeof(zero_block));
     memset(zero2_block, 0, sizeof(zero2_block));
@@ -277,7 +360,13 @@ void fill_segment(const argon2_instance_t *instance,
     uint64_t pseudo_rand, ref_index, ref_lane;
     uint32_t prev_offset, curr_offset;
     uint32_t starting_index, i;
-    __m128i state[64];
+#if defined(__AVX512F__)
+    __m512i state[ARGON2_512BIT_WORDS_IN_BLOCK];
+#elif defined(__AVX2__)
+    __m256i state[ARGON2_HWORDS_IN_BLOCK];
+#else
+    __m128i state[ARGON2_OWORDS_IN_BLOCK];
+#endif
     int data_independent_addressing;
 
     if (instance == NULL) {

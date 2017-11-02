@@ -4,7 +4,7 @@
  * Copyright 2015
  * Daniel Dinu, Dmitry Khovratovich, Jean-Philippe Aumasson, and Samuel Neves
  *
- * You may use this work under the terms of a Creative Commons CC0 1.0 
+ * You may use this work under the terms of a Creative Commons CC0 1.0
  * License/Waiver or the Apache Public License 2.0, at your option. The terms of
  * these licenses can be found at:
  *
@@ -267,8 +267,7 @@ ARGON2_PUBLIC int argon2i_hash_encoded(const uint32_t t_cost,
                                        const size_t encodedlen);
 
 /**
- * Hashes a password with Argon2i, producing a raw hash by allocating memory at
- * @hash
+ * Hashes a password with Argon2i, producing a raw hash at @hash
  * @param t_cost Number of iterations
  * @param m_cost Sets memory usage to m_cost kibibytes
  * @param parallelism Number of threads and compute lanes
@@ -421,6 +420,7 @@ ARGON2_PUBLIC const char *argon2_error_message(int error_code);
  * @param parallelism  Number of threads; used to compute lanes
  * @param saltlen  Salt size in bytes
  * @param hashlen  Hash size in bytes
+ * @param type The argon2_type that we want the encoded length for
  * @return  The encoded hash length in bytes
  */
 ARGON2_PUBLIC size_t argon2_encodedlen(uint32_t t_cost, uint32_t m_cost,
