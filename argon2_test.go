@@ -7,11 +7,12 @@ package argon2
 import (
 	"bytes"
 	"reflect"
+	"strconv"
 	"testing"
 )
 
 var (
-	CFG = Config{
+	config = Config{
 		HashLength:  32,
 		SaltLength:  16,
 		TimeCost:    3,
@@ -20,10 +21,12 @@ var (
 		Mode:        ModeArgon2i,
 		Version:     Version13,
 	}
-	PWD     = []byte("password")
-	SALT    = []byte("saltsalt")
-	HASH    = []byte{0x96, 0x5b, 0xd4, 0x76, 0xaa, 0x7a, 0xf7, 0x2d, 0x91, 0x07, 0xad, 0xbd, 0x74, 0x2b, 0x86, 0xe3, 0x69, 0x11, 0xe7, 0x2f, 0x8e, 0x71, 0xcf, 0xf3, 0x88, 0xa5, 0x79, 0x92, 0x7d, 0xeb, 0x48, 0xe3}
-	ENCODED = []byte("$argon2i$v=19$m=4096,t=3,p=1$c2FsdHNhbHQ$llvUdqp69y2RB629dCuG42kR5y+Occ/ziKV5kn3rSOM")
+
+	password = []byte("password")
+	salt     = []byte("saltsalt")
+
+	expectedHash    = []byte{0x96, 0x5b, 0xd4, 0x76, 0xaa, 0x7a, 0xf7, 0x2d, 0x91, 0x07, 0xad, 0xbd, 0x74, 0x2b, 0x86, 0xe3, 0x69, 0x11, 0xe7, 0x2f, 0x8e, 0x71, 0xcf, 0xf3, 0x88, 0xa5, 0x79, 0x92, 0x7d, 0xeb, 0x48, 0xe3}
+	expectedEncoded = []byte("$argon2i$v=19$m=4096,t=3,p=1$c2FsdHNhbHQ$llvUdqp69y2RB629dCuG42kR5y+Occ/ziKV5kn3rSOM")
 )
 
 func isFalsey(obj interface{}) bool {
@@ -50,7 +53,7 @@ func mustBeTruthy(t *testing.T, name string, obj interface{}) {
 }
 
 func TestHashRaw(t *testing.T) {
-	r, err := CFG.HashRaw(PWD)
+	r, err := config.HashRaw(password)
 	mustBeTruthy(t, "r.Config", r.Config)
 	mustBeTruthy(t, "r.Salt", r.Salt)
 	mustBeTruthy(t, "r.Hash", r.Hash)
@@ -58,7 +61,7 @@ func TestHashRaw(t *testing.T) {
 }
 
 func TestHashEncoded(t *testing.T) {
-	enc, err := CFG.HashEncoded(PWD)
+	enc, err := config.HashEncoded(password)
 	mustBeTruthy(t, "encoded", enc)
 	mustBeFalsey(t, "err", err)
 
@@ -74,14 +77,14 @@ func TestHashEncoded(t *testing.T) {
 }
 
 func TestHashWithSalt(t *testing.T) {
-	r, err := CFG.Hash(PWD, SALT)
+	r, err := config.Hash(password, salt)
 	mustBeTruthy(t, "r.Config", r.Config)
 	mustBeTruthy(t, "r.Salt", r.Salt)
 	mustBeTruthy(t, "r.Hash", r.Hash)
 	mustBeFalsey(t, "err", err)
 
-	if !bytes.Equal(r.Hash, HASH) {
-		t.Logf("ref: %v", HASH)
+	if !bytes.Equal(r.Hash, expectedHash) {
+		t.Logf("ref: %v", expectedHash)
 		t.Logf("act: %v", r.Hash)
 		t.Error("hashes do not match")
 	}
@@ -89,37 +92,37 @@ func TestHashWithSalt(t *testing.T) {
 	enc := r.Encode()
 	mustBeTruthy(t, "encoded", enc)
 
-	if !bytes.Equal(enc, ENCODED) {
-		t.Logf("ref: %s", string(ENCODED))
+	if !bytes.Equal(enc, expectedEncoded) {
+		t.Logf("ref: %s", string(expectedEncoded))
 		t.Logf("act: %s", string(enc))
 		t.Error("encoded strings do not match")
 	}
 }
 
 func TestVerifyRaw(t *testing.T) {
-	r, err := CFG.HashRaw(PWD)
+	r, err := config.HashRaw(password)
 	mustBeTruthy(t, "r.Config", r.Config)
 	mustBeTruthy(t, "r.Salt", r.Salt)
 	mustBeTruthy(t, "r.Hash", r.Hash)
 	mustBeFalsey(t, "err1", err)
 
-	ok, err := r.Verify(PWD)
+	ok, err := r.Verify(password)
 	mustBeTruthy(t, "ok", ok)
 	mustBeFalsey(t, "err2", err)
 }
 
 func TestVerifyEncoded(t *testing.T) {
-	encoded, err := CFG.HashEncoded(PWD)
+	encoded, err := config.HashEncoded(password)
 	mustBeTruthy(t, "encoded", encoded)
 	mustBeFalsey(t, "err1", err)
 
-	ok, err := VerifyEncoded(PWD, encoded)
+	ok, err := VerifyEncoded(password, encoded)
 	mustBeTruthy(t, "ok", ok)
 	mustBeFalsey(t, "err2", err)
 }
 
 func TestSecureZeroMemory(t *testing.T) {
-	pwd := append(make([]byte, 0, len(PWD)), PWD...)
+	pwd := append([]byte(nil), password...)
 
 	// SecureZeroMemory should erase up to cap(pwd) --> let's test that too
 	SecureZeroMemory(pwd[0:0])
@@ -133,12 +136,12 @@ func TestSecureZeroMemory(t *testing.T) {
 
 func BenchmarkHash(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		_, _ = CFG.Hash(PWD, SALT)
+		_, _ = config.Hash(password, salt)
 	}
 }
 
 func BenchmarkVerify(b *testing.B) {
-	r, err := CFG.Hash(PWD, SALT)
+	r, err := config.Hash(password, salt)
 	if err != nil {
 		b.Error(err)
 	}
@@ -146,17 +149,17 @@ func BenchmarkVerify(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		_, _ = r.Verify(PWD)
+		_, _ = r.Verify(password)
 	}
 }
 
 func BenchmarkEncode(b *testing.B) {
-	r, err := CFG.Hash(PWD, SALT)
+	r, err := config.Hash(password, salt)
 	if err != nil {
 		b.Error(err)
 	}
 
-	b.SetBytes(int64(len(ENCODED)))
+	b.SetBytes(int64(len(expectedEncoded)))
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
@@ -165,76 +168,25 @@ func BenchmarkEncode(b *testing.B) {
 }
 
 func BenchmarkDecode(b *testing.B) {
-	b.SetBytes(int64(len(ENCODED)))
+	b.SetBytes(int64(len(expectedEncoded)))
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		_, _ = Decode(ENCODED)
+		_, _ = Decode(expectedEncoded)
 	}
 }
 
-func BenchmarkSecureZeroMemory16(b *testing.B) {
-	const bytes int = 16
-	buf := make([]byte, bytes)
-	b.SetBytes(int64(bytes))
-	b.ResetTimer()
+func BenchmarkSecureZeroMemory(b *testing.B) {
+	for _, n := range []int{16, 256, 4096, 65536} {
+		b.Run(strconv.Itoa(n), func(b *testing.B) {
+			buf := make([]byte, n)
 
-	for i := 0; i < b.N; i++ {
-		SecureZeroMemory(buf)
-	}
-}
+			b.SetBytes(int64(n))
+			b.ResetTimer()
 
-func BenchmarkSecureZeroMemory64(b *testing.B) {
-	const bytes int = 64
-	buf := make([]byte, bytes)
-	b.SetBytes(int64(bytes))
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		SecureZeroMemory(buf)
-	}
-}
-
-func BenchmarkSecureZeroMemory256(b *testing.B) {
-	const bytes int = 256
-	buf := make([]byte, bytes)
-	b.SetBytes(int64(bytes))
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		SecureZeroMemory(buf)
-	}
-}
-
-func BenchmarkSecureZeroMemory1024(b *testing.B) {
-	const bytes int = 1024
-	buf := make([]byte, bytes)
-	b.SetBytes(int64(bytes))
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		SecureZeroMemory(buf)
-	}
-}
-
-func BenchmarkSecureZeroMemory4096(b *testing.B) {
-	const bytes int = 4096
-	buf := make([]byte, bytes)
-	b.SetBytes(int64(bytes))
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		SecureZeroMemory(buf)
-	}
-}
-
-func BenchmarkSecureZeroMemory1048576(b *testing.B) {
-	const bytes int = 1048576
-	buf := make([]byte, bytes)
-	b.SetBytes(int64(bytes))
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		SecureZeroMemory(buf)
+			for i := 0; i < b.N; i++ {
+				SecureZeroMemory(buf)
+			}
+		})
 	}
 }
