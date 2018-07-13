@@ -7,10 +7,9 @@ The **fastest** _and_ **easiest** to use [Argon2](https://github.com/P-H-C/phc-w
 ## Features
 
 - Zero dependencies
-- Easy to use API, including generation of raw and encoded hashes.
-- Up to date & used in production environments.
-- Contains Go-specific optimizations for a consistent **15%** performance boost.
-- Allows you to enable all possible optimizations in Argon2, improving performance by up to **40%** in total!
+- Easy to use API, including generation of raw and encoded hashes
+- Up to date & used in production environments
+- Up to **180-200%** as fast as `golang.org/x/crypto/argon2`, allowing you to apply more secure settings while keeping the same latency
 
 ## Usage
 
@@ -27,34 +26,25 @@ This can be done by adding appropriate `gcc` optimization flags to the `CGO_CFLA
 
 Here's an example which you could set before running `go build` etc.:
 ```bash
-export CGO_CFLAGS="-Ofast -funroll-loops -march=native"
+export CGO_CFLAGS="-O3 -march=native"
 ```
 
 In this example `-march=native` will optimize the program for the _current_ platform you're compiling on.
-If you are planning to deploy this library in a different environment you should replace it with a matching value listed [here](https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html).
+If you're planning to deploy this library in a different environment you should replace it with a matching value listed [here](https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html).
 
-This way you can achieve an performance improvement of up to 25%.
-You can use this performance improvement as a free ticket for stronger hash settings and thus improved security at the same cost.
+This way you can achieve a significant performance improvement.
+You can use this performance improvement to apply stronger hash settings and thus improve security at the same cost.
 
 ## Current downsides
 
-This package uses `cgo` like all Go bindings and thus comes with all it's downsides:
+This package uses `cgo` like all Go bindings and thus comes with all it's downsides. Among others:
 
-- `cgo` makes cross-compilation hard.
-- Can cause excessive spawning of native threads. ¹²
-
-Due to the infinitely superior performance compared to a pure Go implementation I still personally believe that the benefits outweigh the drawbacks though.
+- `cgo` makes cross-compilation hard
+- Excessive thread spawning¹
 
 ¹
-Even if `GOMAXPROCS` has been reached, the Goroutine scheduler will spawn another thread if all threads are already busy processing Goroutines and atleast one of those threads is stuck inside a `cgo` call.
-That thread and its goroutine will then be taken out of the scheduler's thread pool and be replaced by a new thread.
-The old thread on the other hand will be discarded as soon as the goroutine finishes.
-As long as `Config.Parallelism` is 1 (which is the default) Argon2 will not spawn any additional threads internally though, keeping this overhead relatively modest.
-
-²
-If excessive thread spawning still turns out as a performance problem I recommend creating an old-fashioned worker pool by spawning some Goroutines (e.g. as many as CPU cores in the system) in each of which `runtime.LockOSThread()` is called at the beginning.
-In an forever-loop you could then process requests for password hashing using channels from the outside.
-Since those goroutines never return their threads will never be scavanged, allowing them to idle around in cgo as long as they want to.
+Almost every time this library hashes something the scheduler will notice that a Goroutine is blocked in a cgo call and will spawn a new, costly, native thread.
+To prevent this you may use my [workerpool](https://github.com/lhecker/workerpool) project to set up a worker pool like [this](https://github.com/lhecker/workerpool/blob/026271cb185e1421ed2a032d5bfad85589585703/workerpool_test.go#L68-L71).
 
 ## Modifications to Argon2
 
