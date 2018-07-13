@@ -193,7 +193,6 @@ func DefaultConfig() Config {
 // Hash takes a password and optionally a salt and returns an Argon2 hash.
 //
 // If salt is nil a appropriate salt of Config.SaltLength bytes is generated for you.
-// It is recommended to use SecureZeroMemory(pwd) afterwards.
 func (c *Config) Hash(pwd []byte, salt []byte) (*Raw, error) {
 	if pwd == nil {
 		return nil, ErrPwdTooShort
@@ -252,16 +251,12 @@ func (c *Config) Hash(pwd []byte, salt []byte) (*Raw, error) {
 
 // HashRaw is a helper function around Hash()
 // which automatically generates a salt for you.
-//
-// It is recommended to use SecureZeroMemory(pwd) afterwards.
 func (c *Config) HashRaw(pwd []byte) (*Raw, error) {
 	return c.Hash(pwd, nil)
 }
 
 // HashEncoded is a helper function around Hash() which automatically
 // generates a salt and encodes the result for you.
-//
-// It is recommended to use SecureZeroMemory(pwd) afterwards.
 func (c *Config) HashEncoded(pwd []byte) (encoded []byte, err error) {
 	r, err := c.Hash(pwd, nil)
 	if err == nil {
@@ -304,18 +299,12 @@ func VerifyEncoded(pwd []byte, encoded []byte) (bool, error) {
 	return r.Verify(pwd)
 }
 
-// SecureZeroMemory is a helper method which as securely as possible sets all
+// SecureZeroMemory is a helper method which sets all
 // bytes in `b` (up to it's capacity) to `0x00`, erasing it's contents.
-//
-// Using this method DOES NOT make secrets impossible to recover from memory,
-// it's just a good start and generally recommended to use.
-//
-// This method uses SecureZeroMemory() on Windows, memset_s() if available,
-// explicit_bzero() on OpenBSD, or a plain memset() as a fallback.
 func SecureZeroMemory(b []byte) {
-	c := cap(b)
-	if c > 0 {
-		b = b[:c:c]
-		C.secure_wipe_memory(unsafe.Pointer(&b[0]), C.size_t(c))
+	b = b[:cap(b):cap(b)]
+
+	for i := range b {
+		b[i] = 0
 	}
 }
