@@ -57,6 +57,7 @@ int bindings_argon2_hash(const bindings_argon2_config* cfg, void* pwd, const uin
 }
 */
 import "C"
+
 import (
 	"crypto/rand"
 	"crypto/subtle"
@@ -72,19 +73,19 @@ const (
 	// which makes it highly resistant against GPU cracking attacks and
 	// suitable for applications with no (!) threats from
 	// side-channel timing attacks (eg. cryptocurrencies).
-	ModeArgon2d = Mode(C.Argon2_d)
+	ModeArgon2d Mode = C.Argon2_d
 
 	// ModeArgon2i uses data-independent memory access, which is
 	// preferred for password hashing and password-based key derivation
 	// (e.g. hard drive encryption), but it's slower as it makes
 	// more passes over the memory to protect from TMTO attacks.
-	ModeArgon2i = Mode(C.Argon2_i)
+	ModeArgon2i Mode = C.Argon2_i
 
 	// ModeArgon2id is a hybrid of Argon2i and Argon2d, using a
 	// combination of data-depending and data-independent memory accesses,
 	// which gives some of Argon2i's resistance to side-channel cache timing
 	// attacks and much of Argon2d's resistance to GPU cracking attacks.
-	ModeArgon2id = Mode(C.Argon2_id)
+	ModeArgon2id Mode = C.Argon2_id
 )
 
 // String simply maps a ModeArgon{d,i,id} constant to a "Argon{d,i,id}" string
@@ -109,10 +110,10 @@ type Version uint32
 
 const (
 	// Version10 of the Argon2 algorithm. Deprecated: Use Version13 instead.
-	Version10 = Version(C.ARGON2_VERSION_10)
+	Version10 Version = C.ARGON2_VERSION_10
 
 	// Version13 of the Argon2 algorithm. Recommended.
-	Version13 = Version(C.ARGON2_VERSION_13)
+	Version13 Version = C.ARGON2_VERSION_13
 )
 
 // String simply maps a Version{10,13} constant to a "{10,13}" string

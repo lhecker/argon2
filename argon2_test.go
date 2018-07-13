@@ -138,7 +138,7 @@ func TestSecureZeroMemory(t *testing.T) {
 
 func BenchmarkHash(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		_, _ = config.Hash(password, salt)
+		config.Hash(password, salt)
 	}
 }
 
@@ -157,7 +157,7 @@ func BenchmarkVerify(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		_, _ = r.Verify(password)
+		r.Verify(password)
 	}
 }
 
@@ -171,7 +171,7 @@ func BenchmarkEncode(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		_ = r.Encode()
+		r.Encode()
 	}
 }
 
@@ -180,7 +180,7 @@ func BenchmarkDecode(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		_, _ = Decode(expectedEncoded)
+		Decode(expectedEncoded)
 	}
 }
 

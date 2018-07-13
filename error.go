@@ -9,7 +9,9 @@ package argon2
 */
 import "C"
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // Error represents the error code returned by argon2.
 type Error C.int
