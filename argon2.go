@@ -102,7 +102,9 @@ func (m Mode) String() string {
 	}
 }
 
-// Version exists for type check purposes. See Config.
+// Version contains the Argon2 version being used.
+//
+// See Config.
 type Version uint32
 
 const (
@@ -275,13 +277,7 @@ func (c *Config) HashEncoded(pwd []byte) (encoded []byte, err error) {
 // Raw wraps a salt and hash pair including the Config with which it was generated.
 //
 // A Raw struct is generated using Decode() or the Hash*() methods above.
-//
-// You MUST ensure that a Raw instance is not changed after creation,
-// otherwise you risk race conditions. If you do need to change it during
-// runtime use a Mutex and simply create a copy of your shared Raw
-// instance in the critical section and store it on your local stack.
-// That way your critical section is very short, while allowing you to safely
-// call all the member methods on your local "immutable" copy.
+// This struct MUST NOT be mutated while any of its member functions are currently being executed.
 type Raw struct {
 	Config Config
 	Salt   []byte
