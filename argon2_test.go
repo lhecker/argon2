@@ -9,6 +9,8 @@ import (
 	"reflect"
 	"strconv"
 	"testing"
+
+	xcryptoArgon2 "golang.org/x/crypto/argon2"
 )
 
 var (
@@ -137,6 +139,12 @@ func TestSecureZeroMemory(t *testing.T) {
 func BenchmarkHash(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, _ = config.Hash(password, salt)
+	}
+}
+
+func BenchmarkHashXCryptoArgon2(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		xcryptoArgon2.IDKey(password, salt, config.TimeCost, config.MemoryCost, 1, config.HashLength)
 	}
 }
 
