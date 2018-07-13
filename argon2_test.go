@@ -15,18 +15,18 @@ var (
 	config = Config{
 		HashLength:  32,
 		SaltLength:  16,
-		TimeCost:    3,
-		MemoryCost:  1 << 12,
+		TimeCost:    1,
+		MemoryCost:  32 * 1024,
 		Parallelism: 1,
-		Mode:        ModeArgon2i,
+		Mode:        ModeArgon2id,
 		Version:     Version13,
 	}
 
 	password = []byte("password")
 	salt     = []byte("saltsalt")
 
-	expectedHash    = []byte{0x96, 0x5b, 0xd4, 0x76, 0xaa, 0x7a, 0xf7, 0x2d, 0x91, 0x07, 0xad, 0xbd, 0x74, 0x2b, 0x86, 0xe3, 0x69, 0x11, 0xe7, 0x2f, 0x8e, 0x71, 0xcf, 0xf3, 0x88, 0xa5, 0x79, 0x92, 0x7d, 0xeb, 0x48, 0xe3}
-	expectedEncoded = []byte("$argon2i$v=19$m=4096,t=3,p=1$c2FsdHNhbHQ$llvUdqp69y2RB629dCuG42kR5y+Occ/ziKV5kn3rSOM")
+	expectedHash    = []byte{139, 118, 66, 92, 63, 17, 51, 11, 184, 106, 68, 37, 211, 16, 139, 244, 189, 217, 38, 53, 116, 148, 139, 173, 176, 3, 182, 239, 235, 210, 75, 155}
+	expectedEncoded = []byte("$argon2id$v=19$m=32768,t=1,p=1$c2FsdHNhbHQ$i3ZCXD8RMwu4akQl0xCL9L3ZJjV0lIutsAO27+vSS5s")
 )
 
 func isFalsey(obj interface{}) bool {

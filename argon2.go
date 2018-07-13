@@ -177,16 +177,19 @@ type Config struct {
 
 // DefaultConfig returns a Config struct suitable for most servers.
 //
-// These default settings result in around 7ms of computation time while using 4 MiB of memory.
-// (Tested on an i7 3770 @ 3.4 GHz & G.Skill F3-14900CL9D @ 1886 MHz).
+// These default settings follow the recommendation from
+//   https://tools.ietf.org/html/draft-irtf-cfrg-argon2-03#section-9.4
+// using ModeArgon2id, TimeCost of 1 and 32 MiB of memory,
+// which result in around 10-15ms of computation time.
+// (Tested on an i7 8700k and DDR4 @ 3200 MHz).
 func DefaultConfig() Config {
 	return Config{
 		HashLength:  32,
 		SaltLength:  16,
-		TimeCost:    3,
-		MemoryCost:  1 << 12,
+		TimeCost:    1,
+		MemoryCost:  32 * 1024,
 		Parallelism: 1,
-		Mode:        ModeArgon2i,
+		Mode:        ModeArgon2id,
 		Version:     Version13,
 	}
 }
