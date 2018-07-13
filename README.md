@@ -58,7 +58,7 @@ Since those goroutines never return their threads will never be scavanged, allow
 
 ## Modifications to Argon2
 
-Based on [54ff100](https://github.com/P-H-C/phc-winner-argon2/tree/54ff100b0717505493439ec9d4ca85cb9cbdef00).
+Based on [fba7b9a](https://github.com/P-H-C/phc-winner-argon2/tree/fba7b9a73a1bb913f49fadf6126f6e6b352d2fda).
 
 - Moved blake2 code into the root source directory and adjusted include paths to match this change.
 - Merged `ref.c` and `opt.c` into one file (`ref_opt.c`). This allows us to use the `__SSE__` precompiler flag for SSE detection instead of relying on a Makefile.
