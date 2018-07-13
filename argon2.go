@@ -60,6 +60,7 @@ import "C"
 import (
 	"crypto/rand"
 	"crypto/subtle"
+	"runtime"
 	"unsafe"
 )
 
@@ -206,6 +207,9 @@ func (c *Config) Hash(pwd []byte, salt []byte) (*Raw, error) {
 			return nil, err
 		}
 	}
+
+	defer runtime.KeepAlive(pwd)
+	defer runtime.KeepAlive(salt)
 
 	pwdptr := unsafe.Pointer(nil)
 	pwdlen := C.uint32_t(len(pwd))
