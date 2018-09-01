@@ -1,0 +1,7 @@
+language: go
+go:
+  - '1.11'
+script:
+  - go test -bench=BenchmarkHash
+  - CGO_CFLAGS="-O3 -march=native" go test -bench=BenchmarkHash
+  - CGO_CFLAGS="-O3 -mavx2" go test -bench=BenchmarkHash
