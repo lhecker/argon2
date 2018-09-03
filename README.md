@@ -2,14 +2,30 @@
 
 [![](https://godoc.org/github.com/lhecker/argon2?status.svg)](https://godoc.org/github.com/lhecker/argon2)
 
-The **fastest** _and_ **easiest** to use [Argon2](https://github.com/P-H-C/phc-winner-argon2) bindings for Go!
+~~The **fastest** _and_ **easiest** to use [Argon2](https://github.com/P-H-C/phc-winner-argon2) bindings for Go!~~
+
+## ⚠️ Notice ⚠️
+
+**In general I recommend using [`github.com/matthewhartstonge/argon2`](https://github.com/matthewhartstonge/argon2) for now**, for the reasons explained below.<br>
+It has the the _exact same_ API as this project and can be used as a drop in replacement.
+
+If you do want to use this project please first download it on one of the actual machines you plan to deploy this project on and then run:
+```sh
+CGO_CFLAGS="-O3 -march=native" go test -run="^$" -bench=BenchmarkHash
+```
+
+You can adjust the `Config` used for benchmarking [here](https://github.com/lhecker/argon2/blob/master/argon2_test.go#L17-L25).<br>
+If `BenchmarkHash` is slower or not significantly enough faster than `BenchmarkHashXCryptoArgon2` I recommend checking out the alternative project above.
+
+While you should actually still find that this project indeed is "up to twice as fast" as other projects (including those based on `golang.org/x/crypto/argon2`) on Linux and macOS on modern bare metal hardware, the primary issue is that this performance advantage cannot be reliably replicated when being used in any VMs, including those used by popular Cloud Providers.<br>
+I've failed to find a good enough explaination for this performance discrepancy between bare metal and virtualized hardware within a reasonable time frame and thus recommend the library above for now.
 
 ## Features
 
 - Zero dependencies
 - Easy to use API, including generation of raw and encoded hashes
 - Up to date & used in production environments
-- Up to **180-200%** as fast as `golang.org/x/crypto/argon2`, allowing you to apply more secure settings while keeping the same latency
+- _Up to twice_ as fast as `golang.org/x/crypto/argon2`, allowing you to apply more secure settings while keeping the same latency
 
 ## Usage
 
@@ -21,7 +37,7 @@ go run examples/example.go
 
 ## Performance
 
-This library makes use of SSE, SSE2, SSSE3 and XOP, depending on whether they are enabled during compilation.
+This library makes use of AVX/SSE, depending on whether they are enabled during compilation.
 This can be done by adding appropriate `gcc` optimization flags to the `CGO_CFLAGS` environment variable.
 
 Here's an example which you could set before running `go build` etc.:
