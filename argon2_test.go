@@ -144,7 +144,7 @@ func BenchmarkHash(b *testing.B) {
 
 func BenchmarkHashXCryptoArgon2(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		xcryptoArgon2.IDKey(password, salt, config.TimeCost, config.MemoryCost, 1, config.HashLength)
+		xcryptoArgon2.IDKey(password, salt, config.TimeCost, config.MemoryCost, uint8(config.Parallelism), config.HashLength)
 	}
 }
 
