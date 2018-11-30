@@ -11,6 +11,9 @@ import (
 	"testing"
 
 	xcryptoArgon2 "golang.org/x/crypto/argon2"
+
+	// Add this dependency to get pprof traces below the cgo barrier.
+	//_ "github.com/ianlancetaylor/cgosymbolizer"
 )
 
 var (

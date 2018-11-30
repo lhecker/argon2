@@ -49,7 +49,9 @@ enum argon2_core_constants {
  * Memory blocks can be copied, XORed. Internal words can be accessed by [] (no
  * bounds checking).
  */
-typedef struct block_ { uint64_t v[ARGON2_QWORDS_IN_BLOCK]; } block;
+typedef struct block_ {
+    uint64_t v[ARGON2_QWORDS_IN_BLOCK] __attribute__ ((aligned(64)));
+} block;
 
 /*****************Functions that work with the block******************/
 
